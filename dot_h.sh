@@ -21,13 +21,14 @@ IGNORE_FILE='.dot_h.ignore'
 # Directory where the shell script lives
 BASEDIR=$(dirname "$0")
 
+# Print out the help 4 the team
 function help {
     echo "Interface for .h files for .c files. Should also work for .cpp files as well"
     echo "Using -u flag creates / updates a .h file"
     echo "  -i flag updates / creates a .ignore file"
     echo "Usages:"
     echo "  ./dot_h.sh -u {filename}"
-    echo "  ./dot_h.sh -i {function_name} {file_name}"
+    echo "  ./dot_h.sh -i {file_name} {function_names} "
 }
 
 ########################################################################
@@ -63,8 +64,8 @@ function fnget {
 #   seperated by a newline
 #################################################################################
 function update {
-    # File that we are reading from 
-    SOURCE_FILENAME=$1
+  # File that we are reading from 
+  SOURCE_FILENAME=$1
 
   # File that we are writing into
   DEST_FILENAME=$2
@@ -113,12 +114,13 @@ function update {
 #
 #   case FLAG == -u:
 #    $2=FILENAME => .c file that is associated with .h file
+#    $2='print' => Printo ut possible functions that we can add to a .h file
 #   
 #   case FLAG == -i:
-#    $2=FN => Function name that we do not want to be in our .h file
-#    $3=FILE => File to find the function name that we do not want
-#
-#
+#    $2=FILE => File to find the function name that we do not want
+#    $3=Print => Print out ignore file
+#    $3+=FN => Function name that we do not want to be in our .h file
+#    
 # OUTPUT:
 #   case FLAG == -u:
 #     Create or update FILENAME.h (substitute .c for .h) to have the desired
@@ -129,7 +131,7 @@ function update {
 #
 #################################################################################
 
-# if num args != 3
+# if num args < 2
 if [[ $# < 2 ]] 
 then
     help
@@ -143,24 +145,28 @@ FLAG=$1
 if [[ $FLAG == '-u' ]]
 then
 
-    # if num args != 3
+    # if num args < 2
     if [[ $# < 2 ]]
     then
         echo "Usage: ./doth.sh -u {filename}.c"
         exit -1
     fi
 
-    # The destination .h file
+    # The source file
     if [[ $2 == 'print' ]]
     then
         SOURCE=$3
-        FILENAME=$(echo $3 | sed -e s/.c/.h/g);
     else
         SOURCE=$2
-        FILENAME=$(echo $2 | sed -e s/.c/.h/g);
     fi
+      
+    # .h destination file
+    FILENAME=$(echo $SOURCE | sed -e s/.c/.h/g);
+
+    # Find all fn that is in SOURCE but not in FILENAME
     update $SOURCE $FILENAME
     FUNCTIONS=$result
+
     if [[ $2 == 'print' ]]
     then
         exit 0
@@ -189,6 +195,7 @@ fi
 # Update / create ignore .file
 if [[ $FLAG == '-i' ]]
 then
+    # Print out the ignore file
     if [[ $2 == 'print' ]]
     then
         echo -e "Ignored files ${RED}"
@@ -196,20 +203,22 @@ then
         echo -e "${NC}"
         exit 0
     fi
-    # if num args != 3
+
+    # if num args < 3
     if [[ $# < 3 ]]
     then
         echo "Usage: ./doth.sh -i {filename}.c {fn name}"
         echo "       ./doth.sh -i print"
         exit -1
     fi
-    FN=$3
-    FILE=$2
 
+    # Find all of the functions that have been already put into ignore file
+    FILE=$2
     update $FILE $IGNORE_FILE
     FUNCTIONS=$result
     echo -e "${NC}Ignoring"
 
+    # Iterate through user inputted fn and ignore
     NUM_ARG=1
     for FN in "$@"
     do
