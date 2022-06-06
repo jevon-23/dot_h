@@ -42,11 +42,11 @@ function help {
 #   $result: STR => Function names found in file seperated by a newline
 ########################################################################
 function fnget {
-  result=$(cat $1 | # Read the file being passed in 
-      grep '.*{' | # { == start of function
-      grep -v -e 'if ' -v -e 'else ' -v -e 'switch ' -v -e $'do ' -v -e 'while ' -v -e 'for ' -v -e '\" ' -v -e '  ' -v -e 'struct ' | # Omit built-ins that also use {
-      sed -e 's/ {/;/g' \-e 's/;.*/;/g');  # convert { => ;
-}
+    result=$(cat $1 | # Read the file being passed in 
+        grep '.*{' | # { == start of function
+        grep -v -e 'if ' -v -e 'else ' -v -e 'switch ' -v -e $'do ' -v -e 'while ' -v -e 'for ' -v -e '\" ' -v -e '  ' -v -e 'struct ' | # Omit built-ins that also use {
+        sed -e 's/ {/;/g' \-e 's/;.*/;/g');  # convert { => ;
+    }
 
 #################################################################################
 # FUNCTIONALITY:
@@ -63,17 +63,17 @@ function fnget {
 #   seperated by a newline
 #################################################################################
 function update {
-  # File that we are reading from 
-  SOURCE_FILENAME=$1
+    # File that we are reading from 
+    SOURCE_FILENAME=$1
 
   # File that we are writing into
   DEST_FILENAME=$2
-  
+
   # The functions that defined inside of source file
   fnget $SOURCE_FILENAME
   FUNCTIONS=$result
   OUT=$result
-  
+
   # if destination exists, find diff between new funcs and funcs already defined
   if [[ -f $DEST_FILENAME ]]
   then
@@ -83,17 +83,17 @@ function update {
 
   # If there is an ignore file, check make sure not to add those 
   if [[ -f $IGNORE_FILE ]] then
-    IGNORE_CONTENTS=$(cat $IGNORE_FILE)
-    go build $BASEDIR/dot_h.go
-    OUT=$(go run $BASEDIR/dot_h.go $IGNORE_CONTENTS $OUT);
-    rm dot_h
+      IGNORE_CONTENTS=$(cat $IGNORE_FILE)
+      go build $BASEDIR/dot_h.go
+      OUT=$(go run $BASEDIR/dot_h.go $IGNORE_CONTENTS $OUT);
+      rm dot_h
   fi
 
   if [[ $OUT != '' ]] then 
-    echo "New Functions:";
-    echo -e "${GREEN}$OUT";
-else
-    echo "nothing new added"
+      echo "New Functions:";
+      echo -e "${GREEN}$OUT";
+  else
+      echo "nothing new added"
   fi
   result=$OUT
 }
@@ -130,7 +130,7 @@ else
 #################################################################################
 
 # if num args != 3
-if [[ $# < 3 ]] 
+if [[ $# < 2 ]] 
 then
     help
     exit -1;
@@ -142,23 +142,35 @@ FLAG=$1
 # Update / create the .h file
 if [[ $FLAG == '-u' ]]
 then
+
     # if num args != 3
-     if [ ! $# -eq 3 ]
-     then
-         echo "Usage: ./doth.sh -u {filename}.c"
-         exit -1
-     fi
-    
+    if [[ $# < 2 ]]
+    then
+        echo "Usage: ./doth.sh -u {filename}.c"
+        exit -1
+    fi
+
     # The destination .h file
-    FILENAME=$(echo $2 | sed -e s/.c/.h/g);
-    update $2 $FILENAME
+    if [[ $2 == 'print' ]]
+    then
+        SOURCE=$3
+        FILENAME=$(echo $3 | sed -e s/.c/.h/g);
+    else
+        SOURCE=$2
+        FILENAME=$(echo $2 | sed -e s/.c/.h/g);
+    fi
+    update $SOURCE $FILENAME
     FUNCTIONS=$result
-    
+    if [[ $2 == 'print' ]]
+    then
+        exit 0
+    fi
+
     # If .h file does not exist, then write in header guards
     if [[ ! -f $FILENAME ]]
     then
-      HEADER=$(echo $FILENAME | sed -e 's/\./_/g' | tr '[:lower:]' '[:upper:]')
-      echo "#ifndef " $HEADER "\n#define " $HEADER "\n">> $FILENAME
+        HEADER=$(echo $FILENAME | sed -e 's/\./_/g' | tr '[:lower:]' '[:upper:]')
+        echo "#ifndef " $HEADER "\n#define " $HEADER "\n">> $FILENAME
     fi
 
     # remove #endif on to the very end of the file
@@ -167,7 +179,7 @@ then
 
     # If there are new functions, write them into the file
     if [[ $FUNCTIONS != '' ]] then
-      echo $FUNCTIONS >> $FILENAME
+        echo $FUNCTIONS >> $FILENAME
     fi
 
     # rewrite #endif to very end of file 
@@ -177,21 +189,39 @@ fi
 # Update / create ignore .file
 if [[ $FLAG == '-i' ]]
 then
+    if [[ $2 == 'print' ]]
+    then
+        echo -e "Ignored files ${RED}"
+        cat $IGNORE_FILE
+        echo -e "${NC}"
+        exit 0
+    fi
     # if num args != 3
-     if [ ! $# -eq 4 ]
-     then
-         echo "Usage: ./doth.sh -u {filename}.c"
-         exit -1
-     fi
-    FN=$2
-    FILE=$3
+    if [[ $# < 3 ]]
+    then
+        echo "Usage: ./doth.sh -i {filename}.c {fn name}"
+        echo "       ./doth.sh -i print"
+        exit -1
+    fi
+    FN=$3
+    FILE=$2
 
-    # The functions that are in the .c file passed in
     update $FILE $IGNORE_FILE
     FUNCTIONS=$result
-    IGNORE=$(echo $FUNCTIONS | grep $FN)
     echo -e "${NC}Ignoring"
-    echo -e "${RED}$IGNORE${NC}"
-    echo $IGNORE >> $IGNORE_FILE
+
+    NUM_ARG=1
+    for FN in "$@"
+    do
+        if [[ $NUM_ARG > 2 ]]
+        then
+          # The functions that are in the .c file passed in
+          IGNORE=$(echo $FUNCTIONS | grep $FN)
+          echo -e "${RED}$IGNORE${NC}"
+          echo $IGNORE >> $IGNORE_FILE
+        fi
+        NUM_ARG=$(($NUM_ARG+1))
+    done
+
 fi
 
