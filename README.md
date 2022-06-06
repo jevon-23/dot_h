@@ -18,6 +18,7 @@ To generate / update new .h file <br>
   1.1. Core functionality utilizes grep, sed, and diff <br>
 2. Bash is amazing (but we already knew this) <br>
   2.1. Being in bash allows for a lot of very powerful command line tools, alongside an easy interface to execute scripts in higher level languages <br>
+  2.2. Colors w/ echo! <br>
 3. Using an ignore file can be very similar to setting up a configuration file. This is a simple example but being able to specify the functions
    that I do not want to be used is super important and creating an interface to interact with it indirectly is great <br>
 4. Vim is probably the best editor to edit text on and I can't wait to get better <br>
@@ -26,11 +27,12 @@ To generate / update new .h file <br>
     On the other hand, I am not sure how likely it is for me to use this given the fact that a lot of the time through test-driven development as soon
     as I define a function, most of the time I define it in my .h file as well. <br>
 6. TODO:<br>
-  6.1. Allow for **-i** to take in more than one fn at a time to append to .ignore file<br>
   6.2. Allow for user to pass in path to desired .h file<br>
-  6.3. Also maybe allow for writing from .h => .c instead? <br>
   6.4  Produce a way to remove a value from the .h & .ignore file<br>
-  6.5  Print .h & .ignore file<br>
+  
+  6.1. Allow for **-i** to take in more than one fn at a time to append to .ignore file<br> - Completed
+  6.3. Also maybe allow for writing from .h => .c instead? <br> - Unnecessary
+  6.5  Print .h & .ignore file<br> - Completed
 
 
 
